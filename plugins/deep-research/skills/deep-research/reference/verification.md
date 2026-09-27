@@ -51,7 +51,7 @@ Verdict, exactly one:
 Reply with one line of JSON: {{"id":"{id}","verdict":"...","quote":"...","qualifier":"...","note":"..."}}
 <!-- VERIFIER_PROMPT_END -->
 
-Each verifier writes its lines to `verify_results_<batch>.jsonl` in the run folder as it goes; its prompt names that full path and carries the same sentence as a collector's: **"Create the result file at the start and append to it after each verified finding; do not keep findings in memory until the end. A half-finished file is better than an empty one after a crash."** If you write the filled prompts to files, put them in the run folder too, not in a temporary directory.
+Each verifier writes its lines to `verify_results_<batch>.jsonl` in the run folder as it goes; its prompt names that full path and carries the same sentence as a collector's: **"Create the result file at the start and append as you go, after each verified finding; do not keep findings in memory until the end. A half-finished file is better than an empty one after a crash."** If you write the filled prompts to files, put them in the run folder too, not in a temporary directory.
 
 ## Step 3. Apply the verdicts
 

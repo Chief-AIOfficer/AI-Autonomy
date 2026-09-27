@@ -59,7 +59,7 @@ Every collector prompt contains:
 - The objective: its subquestions, and the brief path to read first.
 - The boundaries: what other collectors own.
 - The tool ladder from the brief, in order.
-- The output file, full path, and this instruction verbatim: **"Create the result file at the start and append to it after each verified finding; do not keep findings in memory until the end. A half-finished file is better than an empty one after a crash."**
+- The output file, full path, and this instruction verbatim: **"Create the result file at the start and append as you go, after each verified finding; do not keep findings in memory until the end. A half-finished file is better than an empty one after a crash."**
 - The finding format:
 
 ```
