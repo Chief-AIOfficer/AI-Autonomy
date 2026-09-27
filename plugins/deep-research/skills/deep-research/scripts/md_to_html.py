@@ -25,6 +25,8 @@ CALLOUT_CLASS = {'note': 'accent', 'info': 'accent', 'abstract': 'accent', 'tip'
                  'danger': 'bad', 'error': 'bad', 'bug': 'bad', 'failure': 'bad'}
 SOURCES_RE = r'sources|bibliography|references|источники|библиография|список\s+источников|литература'
 ANSWER_RE = r'answer|executive\s+summary|главное|резюме|ответ'
+# a URL may contain one level of balanced parentheses (Wikipedia: .../Python_(language))
+URL_RE = r'https?://(?:[^\s()<>\]]|\([^\s()<>]*\))+'
 
 
 def front_matter(text: str) -> tuple:
@@ -49,6 +51,14 @@ def slugify(s: str, used: set) -> str:
     return slug
 
 
+def split_trailing(url: str) -> tuple:
+    """Split sentence punctuation and an unmatched closing parenthesis off the end of a bare URL."""
+    end = len(url)
+    while end and (url[end - 1] in '.,;:' or (url[end - 1] == ')' and url.count('(', 0, end) < url.count(')', 0, end))):
+        end -= 1
+    return url[:end], url[end:]
+
+
 def inline(s: str) -> str:
     """Markdown inline syntax to HTML. Code spans are protected first."""
     codes = []
@@ -64,9 +74,17 @@ def inline(s: str) -> str:
         links.append((m.group(1), m.group(2)))
         return f'\x01{len(links) - 1}\x01'
 
-    s = re.sub(r'\[([^\]]+)\]\((https?://[^)\s]+|#[^)\s]*|[^)\s]+\.(?:md|html))\)', keep_link, s)
+    s = re.sub(r'\[([^\]]+)\]\((' + URL_RE + r'|#[^)\s]*|[^)\s:]+\.(?:md|html))\)', keep_link, s)  # no ':' in relative links: javascript:x.html
+    urls = []
+
+    def keep_url(m):
+        url, tail = split_trailing(m.group(0))
+        urls.append(url)
+        return f'\x02{len(urls) - 1}\x02{tail}'
+
+    # bare URLs are kept out of emphasis: https://x.org/_next_/a must not turn into <em>
+    s = re.sub(r'(?<![\w"=/])' + URL_RE, keep_url, s)
     s = html.escape(s, quote=False)
-    s = re.sub(r'(?<![\w"=/])(https?://[^\s<)\]]+[^\s<)\].,;:])', r'<a href="\1">\1</a>', s)
     s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)
     s = re.sub(r'(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])', r'<em>\1</em>', s)
     s = re.sub(r'(?<!\w)_(?!\s)(.+?)(?<!\s)_(?!\w)', r'<em>\1</em>', s)
@@ -76,6 +94,7 @@ def inline(s: str) -> str:
         return ''.join(f'<a class="cite" href="#ref-{n}">[{n}]</a>' for n in nums)
 
     s = re.sub(r'\[(\d+(?:\s*[,;]\s*\d+)*)\](?!\()', cite, s)
+    s = re.sub(r'\x02(\d+)\x02', lambda m: '<a href="{0}">{0}</a>'.format(html.escape(urls[int(m.group(1))])), s)
     s = re.sub(r'\x01(\d+)\x01', lambda m: '<a href="{}">{}</a>'.format(
         html.escape(links[int(m.group(1))][1]), inline(links[int(m.group(1))][0])), s)
     s = re.sub(r'\x00(\d+)\x00', lambda m: f'<code>{codes[int(m.group(1))]}</code>', s)

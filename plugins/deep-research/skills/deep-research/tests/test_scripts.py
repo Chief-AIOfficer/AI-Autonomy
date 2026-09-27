@@ -88,11 +88,35 @@ class TestValidate(unittest.TestCase):
         _, warnings, _ = validate_report.validate(report(answer_words=40))
         self.assertTrue(any('answer' in w for w in warnings))
 
+    def test_heading_with_question_word_is_not_method_intro(self):
+        self.assertEqual(validate_report.classify('Ответ на вопрос'), 'answer')
+        self.assertEqual(validate_report.classify('Ограничения и открытый вопрос'), 'limitations')
+        self.assertEqual(validate_report.classify('Вопрос и метод'), 'method_intro')
+
 
 class TestCheckLinks(unittest.TestCase):
     def test_extracts_urls_from_sources(self):
         urls = check_links.sources_urls(SOURCES)
         self.assertEqual(urls[2], 'https://example.org/2')
+
+    def test_url_with_parentheses(self):
+        urls = check_links.sources_urls('[1] W. https://en.wikipedia.org/wiki/Python_(language) (accessed)\n'
+                                        '[2] [Title](https://example.org/a).\n')
+        self.assertEqual(urls[1], 'https://en.wikipedia.org/wiki/Python_(language)')
+        self.assertEqual(urls[2], 'https://example.org/a')
+
+    def test_certificate_error_is_not_a_dead_link(self):
+        import ssl
+        import urllib.error
+        orig = check_links.status
+
+        def fail(url, t):
+            raise urllib.error.URLError(ssl.SSLCertVerificationError('certificate verify failed'))
+        try:
+            check_links.status = fail
+            self.assertEqual(check_links.classify('https://x.org', 1)[0], 'unchecked')
+        finally:
+            check_links.status = orig
 
     def test_classification(self):
         orig = check_links.status
@@ -133,6 +157,13 @@ class TestMdToHtml(unittest.TestCase):
         self.assertEqual(page.count('<ul>'), 2)
         self.assertIn('<code>код &lt;b&gt;</code>', page)
         self.assertIn('<a href="https://example.org">ссылка</a>', page)
+
+    def test_urls_with_underscores_and_parentheses(self):
+        page = self.render('## Находки\n\nСм. https://site.org/_next_/a_b и '
+                           '[вики](https://en.wikipedia.org/wiki/Python_(language)).')
+        self.assertIn('<a href="https://site.org/_next_/a_b">https://site.org/_next_/a_b</a>', page)
+        self.assertIn('<a href="https://en.wikipedia.org/wiki/Python_(language)">вики</a>.', page)
+        self.assertNotIn('href="javascript', self.render('[x](javascript:alert.html) [y](notes/a.md)'))
 
     def test_front_matter_title(self):
         page = self.render('---\ntitle: "Из шапки"\ndate: 2026-09-27\n---\n\n## Главное\n\nТекст.')

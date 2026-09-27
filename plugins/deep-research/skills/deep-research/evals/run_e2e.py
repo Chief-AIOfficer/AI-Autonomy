@@ -20,6 +20,7 @@ known_errors. --skill-dir lets you run an older version checked out with
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -50,7 +51,8 @@ PROMPT = """Проведи исследование скиллом deep-research
 
 
 def transcript_path(cwd: Path, session_id: str) -> Path:
-    slug = str(cwd).replace('/', '-').replace('.', '-').replace('_', '-')
+    # Claude Code replaces every character that is not an ASCII letter or digit, Cyrillic included
+    slug = re.sub(r'[^A-Za-z0-9]', '-', str(cwd))
     return Path.home() / '.claude' / 'projects' / slug / f'{session_id}.jsonl'
 
 

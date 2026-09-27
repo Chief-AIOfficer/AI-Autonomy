@@ -133,7 +133,7 @@ def summary(run_dir: Path) -> str:
     vres = run_dir / 'verifier' / 'results.jsonl'
     if vres.exists():
         vs = verifier_score(load_jsonl(vres), load_jsonl(HERE / 'verifier_cases.jsonl'))
-        lines += ['', f'Проверяющий фазы 5.5: {vs["passed"]}/{vs["total"]} вердиктов совпали с эталоном.']
+        lines += ['', f'Проверяющий фазы 6: {vs["passed"]}/{vs["total"]} вердиктов совпали с эталоном.']
         lines += [f'- {r["id"]}: {r["verdict"]}, ожидалось {"/".join(r["expected"])}' for r in vs['rows'] if not r['pass']]
     lines += ['', 'Число это сигнал, а не приговор: перед выводом прочитать 2-3 транскрипта и grades.jsonl провалившихся кейсов.']
     return '\n'.join(lines) + '\n'

@@ -5,12 +5,14 @@
 
 A URL is ok (2xx or 3xx), blocked (the site refuses scripts: 401, 403, 405,
 429, 451; the page may well exist, open it by hand or rely on the verifiers
-who opened it), or dead (404, 410, DNS failure, timeout). Exit 1 if any URL
-is dead.
+who opened it), or dead (404, 410, DNS failure, timeout). A TLS certificate error is
+unchecked: it usually means this Python has no CA certificates installed, not
+that the link is broken. Exit 1 if any URL is dead.
 """
 
 import argparse
 import re
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -19,12 +21,14 @@ from pathlib import Path
 
 BLOCKED = {401, 403, 405, 429, 451}
 UA = 'Mozilla/5.0 (research link check)'
+# a URL may contain one level of balanced parentheses (Wikipedia: .../Python_(language))
+URL_RE = r'https?://(?:[^\s()<>\]]|\([^\s()<>]*\))+'
 
 
 def sources_urls(text: str) -> dict:
     """{number: url} from lines like "[3] ... https://..." anywhere in the text."""
     out = {}
-    for m in re.finditer(r'^\s*\[(\d+)\].*?(https?://[^\s)>\]]+)', text, flags=re.M):
+    for m in re.finditer(r'^\s*\[(\d+)\].*?(' + URL_RE + ')', text, flags=re.M):
         out.setdefault(int(m.group(1)), m.group(2).rstrip('.,;'))
     return out
 
@@ -38,15 +42,17 @@ def status(url: str, timeout: float) -> int:
         except urllib.error.HTTPError as e:
             return e.code
     code = fetch('HEAD')
-    if code in BLOCKED or code == 404:
-        code = fetch('GET')  # many servers reject HEAD from scripts
+    if code >= 400:
+        code = fetch('GET')  # many servers reject HEAD from scripts (403, 404, 405, 400, 501)
     return code
 
 
 def classify(url: str, timeout: float) -> tuple:
     try:
         code = status(url, timeout)
-    except Exception as e:  # DNS, TLS, timeout: the link does not work from here
+    except Exception as e:  # DNS, timeout: the link does not work from here
+        if isinstance(getattr(e, 'reason', e), ssl.SSLCertVerificationError):
+            return 'unchecked', 'TLS certificate not verified by this Python'
         return 'dead', str(e)[:80]
     if 200 <= code < 400:
         return 'ok', str(code)
@@ -74,6 +80,9 @@ def main():
     blocked = [n for n, (k, _) in results.items() if k == 'blocked']
     if blocked:
         print(f'Check by hand (site refuses scripts): {sorted(blocked)}')
+    if any(k == 'unchecked' for k, _ in results.values()):
+        print('TLS certificate errors: this Python may lack CA certificates '
+              '(python.org installer on macOS: run "Install Certificates.command").')
     print('FAILED: dead links' if dead else 'PASSED')
     sys.exit(1 if dead else 0)
 

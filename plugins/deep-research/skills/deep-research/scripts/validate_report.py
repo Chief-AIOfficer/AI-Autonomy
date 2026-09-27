@@ -42,10 +42,11 @@ def split_sections(text: str) -> list:
 
 
 def classify(heading: str):
-    # A heading may carry both languages ("Answer. Главное"); first match in REQUIRED order wins,
-    # except that 'method' must not swallow "Question and method".
+    # A heading may carry both languages ("Answer. Главное"); the first key in this order wins.
+    # 'method' comes after 'method_intro' so it does not swallow "Question and method"; 'answer' and
+    # 'limitations' come before it so "Ответ на вопрос" and "Ограничения и открытый вопрос" stay theirs.
     h = heading.lower()
-    for key in ('method_intro', 'answer', 'findings', 'conclusions', 'limitations', 'sources', 'method'):
+    for key in ('answer', 'limitations', 'method_intro', 'findings', 'conclusions', 'sources', 'method'):
         if re.search(r'(?:^|[\s.:(/-])(?:' + SECTIONS[key] + r')(?:$|[\s.:)/,-])', ' ' + h + ' '):
             return key
     return None

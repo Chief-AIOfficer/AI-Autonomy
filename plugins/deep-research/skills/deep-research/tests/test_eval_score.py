@@ -11,6 +11,7 @@ from pathlib import Path
 
 EVALS = Path(__file__).resolve().parent.parent / 'evals'
 sys.path.insert(0, str(EVALS))
+import run_e2e  # noqa: E402
 import score  # noqa: E402
 
 
@@ -79,6 +80,14 @@ class TestScoring(unittest.TestCase):
             text = score.summary(run)
             self.assertIn('| E01 |', text)
             self.assertIn('0.70', text)
+
+
+class TestRunE2E(unittest.TestCase):
+    def test_transcript_path_matches_claude_project_folder(self):
+        # Claude Code names the project folder by replacing every non-ASCII-alphanumeric character with '-'
+        p = run_e2e.transcript_path(Path('/Users/a/Документы/_evals.x/E01'), 'sid')
+        self.assertEqual(p.parent.name, '-Users-a-' + '-' * len('Документы') + '--evals-x-E01')
+        self.assertEqual(p.name, 'sid.jsonl')
 
 
 if __name__ == '__main__':
