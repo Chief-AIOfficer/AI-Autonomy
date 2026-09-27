@@ -12,15 +12,19 @@ And the opposite failure: verifiers discarding true claims because one tool coul
 
 ## Step 1. Queue the claims
 
-From the draft, take every claim that (a) is in the answer at the top, the conclusions or the recommendations, (b) contains a number, date, legal norm, name or ranking, or (c) a recommendation depends on. Quick: all such claims, at least 5. Standard: at least 10. Deep and ultradeep: all.
+From the draft, take every claim that (a) is in the answer at the top, the conclusions or the recommendations, (b) contains a number, date, legal norm, name or ranking, (c) a recommendation depends on, (d) quotes a source or says what a named source, author, post or comment said, or (e) says that something does not exist, was not published or was not found. Quick: all of them (a quick report has few). Standard: all of kinds (a), (d) and (e), and at least 10 in total. Deep and ultradeep: all.
 
-**Make each one atomic and self-contained** before queueing. One row, one checkable statement. Split compound sentences. Replace pronouns and implicit context with the subject, the metric, the period, the population or benchmark subset, and who states it. Keep the qualifiers the draft uses: they are part of what must be confirmed.
+Kinds (d) and (e) are never left out for budget: a quote pinned to the wrong page and an absence nobody searched for are the two errors a reader cannot catch.
 
-Write `verify_queue.jsonl`, one JSON object per line: `id`, `claim`, `cited_url`, and for derived numbers `inputs` and `formula`.
+**Make each one atomic and self-contained** before queueing. One row, one checkable statement. Split compound sentences. Replace pronouns and implicit context with the subject, the metric, the period, the population or benchmark subset, and who states it. Keep every qualifier the draft uses, and every word the draft says about the source itself: who ran it, the method, the sample, open or controlled data, the language, which thread and which author, "most upvoted". A descriptor left out of the claim is a descriptor nobody checks.
+
+For an absence claim (e), `cited_url` is the place a complete search had to cover (the regulator's register of acts, the vendor's documentation, the forum), and the claim names what was not found there.
+
+Write `verify_queue.jsonl`, one JSON object per line: `id`, `claim`, `cited_url`, `sentence` (the draft sentence the claim comes from, verbatim), and for derived numbers `inputs` and `formula`.
 
 ## Step 2. Verifiers
 
-One subagent per 5–8 claims, in parallel, on a model strong enough to judge negation, periods and populations (not the smallest one). Each receives only its queue rows and the prompt below, filled per claim. `{{` and `}}` stand for single braces (the template is Python-formatted by `evals/score.py`, so edits here are exactly what the eval set measures).
+One subagent per 5–8 claims, in parallel, on a model strong enough to judge negation, periods and populations (not the smallest one). Each receives only its queue rows and the prompt below, filled per claim. `{{` and `}}` stand for single braces: write single ones when you fill the prompt (the template is Python-formatted by `evals/score.py`, so edits here are exactly what the eval set measures).
 
 <!-- VERIFIER_PROMPT_START -->
 You are an independent verifier. You have NOT seen the report this claim comes from; that is deliberate.
@@ -33,8 +37,9 @@ Steps:
 1. Open the page yourself. Order by cost: the built-in fetch first; if it fails, is vague, or you need exact text, a prepaid raw-text tool (for example Bright Data scrape_as_markdown); a metered API (for example Tavily extract) only if both failed, at its basic depth. A summarizing fetch tool may misreport what a page says, so never rely on its "not found". For arXiv try the /html/ version, then the PDF.
 2. Find the passage the claim rests on and copy it verbatim.
 3. Read around it before judging: the whole paragraph, the next paragraph, the section it belongs to. Then scan the page for qualifiers that limit or reverse it: "however", "but", "only", "except", "on the harder", "reversed", "does not", "limitation", "caveat", "in contrast", and any Limitations section. Quote any qualifier you find.
-4. Check meaning, not words: negation; modality (must or required vs recommended or may; approves vs evaluates; prohibits vs advises against; a price or offer vs a market benchmark; in force vs adopted vs repealed); which metric; which period; which population, subset, model or country; whether the source says it or only cites someone else; whether a number is in the text or read off a chart.
+4. Check meaning, not words: negation; modality (must or required vs recommended or may; approves vs evaluates; prohibits vs advises against; a price or offer vs a market benchmark; in force vs adopted vs repealed); which metric; which period; which population, subset, model or country; how the source got it (method, sample, open or controlled data, language); whether the source says it or only cites someone else; for a quote, whether it is on this page and by the named author rather than on a linked or similar page; whether a number is in the text or read off a chart.
 5. For derived numbers, recompute from the source inputs and show the arithmetic.
+6. If the claim says something does not exist or was not found, do not open one page: search for it yourself, on the cited site and beyond, with the domain's own terms (document types, numbering formats, official names) and at least two tools. If you find it, the verdict is refuted and the quote comes from what you found.
 
 Verdict, exactly one:
 - confirmed: a verbatim passage supports the claim as worded, and nothing nearby limits it.
@@ -46,7 +51,7 @@ Verdict, exactly one:
 Reply with one line of JSON: {{"id":"{id}","verdict":"...","quote":"...","qualifier":"...","note":"..."}}
 <!-- VERIFIER_PROMPT_END -->
 
-Each verifier writes its lines to `verify_results_<batch>.jsonl` as it goes.
+Each verifier writes its lines to `verify_results_<batch>.jsonl` in the run folder as it goes; its prompt names that full path and carries the same sentence as a collector's: **"Create the result file at the start and append to it after each verified finding; do not keep findings in memory until the end. A half-finished file is better than an empty one after a crash."** If you write the filled prompts to files, put them in the run folder too, not in a temporary directory.
 
 ## Step 3. Apply the verdicts
 
@@ -57,6 +62,8 @@ Each verifier writes its lines to `verify_results_<batch>.jsonl` as it goes.
 - `not_verifiable`: keep it, mark it inline `[не проверено]` or `[unverified]` in the language of the report, and list it among the uncertainties. Never delete a claim for this reason alone, and never state it as fact in the answer at the top.
 
 Then re-read the `refuted` and `not_verifiable` lists yourself, opening the sources. Verifiers also throw out true claims; a single tool's failure to find a passage is the usual reason.
+
+Last, compare each queued `sentence` as it now stands in the report with the claim that was checked. Whatever the sentence says beyond the claim (an adjective about the method, a vote count, which thread) was not verified: cut it, or queue it again.
 
 ## Step 4. Section grounding check (deep and ultradeep only)
 

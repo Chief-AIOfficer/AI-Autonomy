@@ -18,7 +18,7 @@ claude plugin marketplace add Chief-AIOfficer/AI-Autonomy
 claude plugin install deep-research@ai-autonomy
 ```
 
-Обновить: `/plugin marketplace update ai-autonomy`.
+Обновить: в терминале `claude plugin marketplace update ai-autonomy`, затем `claude plugin update deep-research@ai-autonomy` и перезапустить Claude Code. Первая команда только обновляет каталог, вторая ставит новую версию скилла.
 
 ## Скиллы
 

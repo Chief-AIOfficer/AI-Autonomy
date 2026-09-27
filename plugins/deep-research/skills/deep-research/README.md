@@ -26,9 +26,9 @@
 /plugin install deep-research@ai-autonomy
 ```
 
-Обновление: `/plugin marketplace update ai-autonomy`.
+Обновление: в терминале `claude plugin marketplace update ai-autonomy`, затем `claude plugin update deep-research@ai-autonomy` и перезапустить Claude Code. Первая команда только обновляет каталог, вторая ставит новую версию скилла.
 
-Вручную, как личный скилл без плагина:
+Вручную, как личный скилл без плагина (ставьте одним способом из двух, иначе скилл окажется в списке дважды):
 
 ```bash
 git clone https://github.com/Chief-AIOfficer/AI-Autonomy.git ~/AI-Autonomy
@@ -44,6 +44,8 @@ ln -s ~/AI-Autonomy/plugins/deep-research/skills/deep-research ~/.claude/skills/
 - «Сделай deep research: какие требования к ИИ в банках действуют в России на сегодня»
 - «Исследуй в режиме deep: стоит ли переходить с X на Y для нашей задачи»
 - «Быстро разберись (quick): что такое …»
+
+Чтобы вызвать скилл явно: `/deep-research:deep-research ваш вопрос` (если ставили через маркетплейс) или `/deep-research ваш вопрос` (если вручную).
 
 Режимы:
 
@@ -80,6 +82,12 @@ export DEEP_RESEARCH_DIR="$HOME/Documents/Мои исследования"
 | Научные статьи | серверы arXiv и Semantic Scholar |
 
 Платные поисковые API скилл вызывает в самом дешёвом режиме и не запускает их встроенные «исследования» без вашей просьбы.
+
+## Если что-то не работает
+
+- **`check_links.py` пишет `unchecked … TLS certificate`** почти про все ссылки. Это не битые ссылки, а Python без корневых сертификатов (так бывает с установщиком с python.org на macOS). Запустите `Install Certificates.command` из папки Python в «Программах».
+- **Скилл не находится.** После установки или обновления перезапустите Claude Code. Проверить, что плагин стоит: `claude plugin list`.
+- **Отчёт короче, чем ждали.** Длина в режимах это потолок, а не норма. Нужна глубина: попросите режим deep.
 
 ## Как устроен
 
