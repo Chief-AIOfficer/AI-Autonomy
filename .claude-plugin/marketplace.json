@@ -1,0 +1,14 @@
+{
+  "name": "ai-autonomy",
+  "description": "Скиллы Claude Code для самостоятельной работы с ИИ: исследования, проверка фактов и другие инструменты Александра Ульянова",
+  "owner": {
+    "name": "Alexander Ulyanov"
+  },
+  "plugins": [
+    {
+      "name": "deep-research",
+      "source": "./plugins/deep-research",
+      "description": "Исследования с замороженным брифом, параллельными сборщиками, независимой проверкой каждого факта и отчётом в Markdown и HTML"
+    }
+  ]
+}

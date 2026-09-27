@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<style>
+  :root{
+    --ink:#12161c; --ink-2:#3d4551; --ink-3:#6b7480;
+    --line:#dcdcd6; --line-2:#eeeee9; --bg:#f7f6f3; --paper:#fff;
+    --accent:#1d4e6f; --accent-bg:#eef3f7; --accent-line:#cddbe6;
+    --warn:#8a5a1a; --warn-bg:#fbf4e9; --warn-line:#ecdcc0;
+    --bad:#8f2f2a; --bad-bg:#fbeeed; --bad-line:#eccfcd;
+    --ok:#2c6045; --ok-bg:#eef5f0; --ok-line:#cadfd2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e8eaed; --ink-2:#c3c8cf; --ink-3:#98a0aa;
+      --line:#3a3f46; --line-2:#2c3036; --bg:#15181c; --paper:#1c1f24;
+      --accent:#8fb8d8; --accent-bg:#1f2a33; --accent-line:#2f4252;
+      --warn:#e0b27a; --warn-bg:#2b241a; --warn-line:#4a3b26;
+      --bad:#e89690; --bad-bg:#2d1f1e; --bad-line:#4d302e;
+      --ok:#8fcaa6; --ok-bg:#1c2922; --ok-line:#2e4638;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:900px;margin:0 auto;background:var(--paper);min-height:100vh;
+    padding:48px 60px 64px;border-left:1px solid var(--line-2);border-right:1px solid var(--line-2)}
+  header.doc{margin-bottom:28px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+  .kicker{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:660;margin-bottom:12px}
+  header.doc h1{font-size:34px;line-height:1.18;font-weight:680;letter-spacing:-.025em;margin-bottom:10px}
+  .meta{font-size:13.5px;color:var(--ink-3)}
+  nav.toc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:0 0 30px}
+  nav.toc .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:640;margin-bottom:6px}
+  nav.toc ol{margin:0 0 0 20px;font-size:14.5px}
+  nav.toc li{margin:3px 0}
+  nav.toc a{color:var(--ink-2);text-decoration:none}
+  nav.toc a:hover{color:var(--accent)}
+  h2{font-size:23px;line-height:1.28;font-weight:660;letter-spacing:-.015em;margin:38px 0 12px;
+    padding-top:18px;border-top:1px solid var(--line-2)}
+  h3{font-size:18px;line-height:1.35;font-weight:650;margin:26px 0 10px}
+  h4{font-size:15.5px;font-weight:650;margin:18px 0 8px}
+  p{margin-bottom:13px;max-width:78ch}
+  strong{font-weight:650}
+  a{color:var(--accent)}
+  ul,ol{margin:0 0 14px 22px}
+  li{margin:5px 0;max-width:76ch}
+  code{font:13.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);padding:1px 5px;border-radius:4px}
+  pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:0 0 14px}
+  pre code{background:none;padding:0}
+  .tw{overflow-x:auto;margin:6px 0 16px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line-2);vertical-align:top}
+  th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:640;border-bottom:1px solid var(--line)}
+  td{font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  blockquote{font-size:16px;color:var(--ink-2);padding-left:16px;border-left:2px solid var(--line);margin:12px 0}
+  .note{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:13px 17px;margin:16px 0;font-size:15.5px}
+  .note .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:640;color:var(--ink-3);margin-bottom:6px}
+  .note p:last-child{margin-bottom:0}
+  .note.accent{background:var(--accent-bg);border-color:var(--accent-line)} .note.accent .lbl{color:var(--accent)}
+  .note.warn{background:var(--warn-bg);border-color:var(--warn-line)} .note.warn .lbl{color:var(--warn)}
+  .note.bad{background:var(--bad-bg);border-color:var(--bad-line)} .note.bad .lbl{color:var(--bad)}
+  .note.ok{background:var(--ok-bg);border-color:var(--ok-line)} .note.ok .lbl{color:var(--ok)}
+  section.answer{background:var(--accent-bg);border:1px solid var(--accent-line);border-radius:10px;padding:4px 22px 10px;margin:0 0 8px}
+  section.answer h2{border-top:none;margin-top:14px;padding-top:0;color:var(--accent)}
+  a.cite{font-size:11.5px;font-weight:640;text-decoration:none;color:var(--ink-3);vertical-align:super;line-height:0;padding:0 1px}
+  a.cite:hover{color:var(--accent)}
+  section.sources p,section.sources li{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin-bottom:6px;max-width:none}
+  section.sources a{word-break:break-all}
+  :target{background:var(--warn-bg);border-radius:4px}
+  footer.doc{margin-top:40px;padding-top:14px;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-3)}
+  @media (max-width:720px){
+    .page{padding:28px 16px 48px;border:none}
+    header.doc h1{font-size:26px}
+    h2{font-size:20px}
+  }
+  @media print{
+    body{background:#fff}
+    .page{border:none;padding:0;max-width:none}
+    nav.toc{display:none}
+    h2{page-break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+<header class="doc">
+  <div class="kicker">{{kicker}}</div>
+  <h1>{{title}}</h1>
+  <div class="meta">{{meta}}</div>
+</header>
+{{toc}}
+{{content}}
+<footer class="doc">{{footer}}</footer>
+</div>
+</body>
+</html>
