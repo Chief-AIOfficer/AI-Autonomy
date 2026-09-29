@@ -31,7 +31,7 @@ Ceilings, not targets: a short report that is fully grounded beats a long one.
 ## Phases
 
 0. **Tools.** Find out which search and fetch tools this machine has and build the retrieval ladder from them.
-1. **Brief.** Freeze the question, the decision it feeds, the boundaries and the assumptions in `00_brief.md`.
+1. **Brief.** Check the request on four axes: the decision it feeds, boundaries, form of the answer, neutral wording. In deep and ultradeep, when a person is present and an axis is empty or the wording is loaded, ask up to three questions in one message before planning. Then freeze the question, decision, boundaries, form and assumptions in `00_brief.md`.
 2. **Plan.** Subquestions with difficulty tags, perspectives, answer hypotheses from four angles when the question asks what to do or which option to take, the organizations whose own sites must be swept, the collectors and what each owns. In deep and ultradeep, when a person is present, show the plan and ask once: launch all at once or in waves.
 3. **Collect.** Parallel collectors write findings with verbatim quotes to files as they go. Stop by the rules in method.md: an effort floor per subquestion, saturation, and a separate response to being stuck.
 4. **Cross-check.** Independence of sources, contradictions as records, a confidence label per claim.

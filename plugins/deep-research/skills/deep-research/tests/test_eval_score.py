@@ -17,7 +17,7 @@ import score  # noqa: E402
 
 class TestCaseFiles(unittest.TestCase):
     def test_case_counts(self):
-        self.assertEqual(len(score.load_jsonl(EVALS / 'cases.jsonl')), 12)
+        self.assertEqual(len(score.load_jsonl(EVALS / 'cases.jsonl')), 14)
         self.assertEqual(len(score.load_jsonl(EVALS / 'verifier_cases.jsonl')), 10)
 
     def test_case_fields_and_hints_compile(self):

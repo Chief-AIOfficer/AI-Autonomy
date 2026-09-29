@@ -28,16 +28,46 @@ Write the ladder you built into `00_brief.md` (section "Tools") so collectors an
 
 ## 1. Brief
 
+A request like "look into X" has no finish line: nothing says when the research is done or what it is for. Research without a decision to serve has no bottom. The brief turns the request into a question with a checkable answer.
+
+### Four axes of an adequate question
+
+Before writing the brief, check the request on four axes:
+
+1. **Decision.** What the person will do with the answer: pick a vendor, write a course module, go or no-go on a market, answer a regulator. Not "understand the market", but "shortlist three platforms for our case and say why".
+2. **Boundaries.** Time window, geography, segment, and the angle (for engineers, for a board, for a buyer).
+3. **Form.** What the answer looks like: a comparison table with named columns, a recommendation with its grounds, a list of options with trade-offs. The form sets the size of the job.
+4. **Neutral wording.** The question does not ask to confirm an answer. "Prove that remote work beats the office" becomes "what the evidence says on remote versus office productivity, both sides, weighted by study quality". A model will confirm any loaded hypothesis it is handed; a loaded question is the first source of bad research.
+
+An axis is empty when the request gives nothing for it and the context of the conversation does not either. Check the conversation before calling an axis empty: a person who has spent an hour on a course plan does not need to be asked what the research is for.
+
+### Gate: ask before planning (deep and ultradeep)
+
+The gate depends on the mode and on whether a person is present.
+
+- **deep or ultradeep, a person is present, at least one axis is empty or the wording is loaded:** stop before the plan and send one message with up to three questions, the most important first. The decision question always comes first when that axis is empty; phrase it as "what will you do with the answer", with two or three concrete options the request suggests. For loaded wording, show the neutral version and ask which one to research. End the message with the defaults you will use if the person answers "go" or "doesn't matter", so a one-word reply is enough. Then wait.
+- **deep or ultradeep, all four axes filled:** no questions, go to the plan.
+- **quick or standard:** no gate. Fill empty axes with the most likely reading and write it down as an assumption. Ask only if the request is ambiguous in a way that changes the research (which market, which period), two questions at most.
+- **Loaded wording, any mode:** research the neutral version. Without a gate, say in the method section that the question was reworded and how; the Answer section reports what the evidence shows on both sides, including where it does not support the hypothesis the person brought.
+- **No person present** (a background or scripted run, or the person said "no questions"): no gate in any mode. Fill the axes as assumptions. In deep and ultradeep, an assumed decision is stated in the first line of the report's Answer section ("The decision this research serves is assumed: …"), not only in the method section, so a reader who stops at the top knows what the answer was aimed at.
+
+**Stakes check.** The answer to the decision question also checks the mode. If it shows a low-stakes use ("just curious", "to get oriented") and the mode is deep or ultradeep, offer the lower mode in one line and use what the person picks. Do not downgrade silently.
+
+The gate and the plan checkpoint (phase 2, step 6) are two separate stops by design: the gate settles why the research is done, the checkpoint settles how. The plan is built on the decision, so asking about the decision after the plan means rebuilding it. Planning makes no searches, so the two stops come a few minutes apart at the start of the run.
+
+### The brief
+
 Write `00_brief.md` in the run folder and treat it as frozen:
 
-- **Question**, in one sentence, and **the decision it feeds**. If the decision is unclear, name the most likely one as an assumption.
+- **Question**, in one sentence, neutrally worded, and **the decision it feeds**.
 - **Reader**: who acts on the report and what they already know.
 - **Boundaries**: in scope, out of scope, time window, geography.
+- **Form of the answer**: what the Answer section and any comparison table must contain.
 - **Evidence rules**: what counts as a primary source for this topic (the text of a law, a vendor's own documentation, the paper, the dataset), and that marketing pages are claims, not evidence.
-- **Assumptions** you made instead of asking.
+- **Assumptions** you made instead of asking, and for each axis whether it came from the person or was assumed.
 - **Tools**: the ladder from phase 0.
 
-Ask clarifying questions only when a person is present and the question is genuinely ambiguous in a way that changes the research (which market, which period, which decision). Two or three questions at most, in one message. Otherwise decide, and write the assumption down. If later evidence forces a change to the brief, record the amendment and why in the report's method section; do not drift silently.
+If later evidence forces a change to the brief, record the amendment and why in the report's method section; do not drift silently.
 
 ## 2. Plan
 

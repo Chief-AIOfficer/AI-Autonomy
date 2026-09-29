@@ -8,7 +8,7 @@ Write the report in the language of the question. Write it to `report.md` in the
 
 Section names may be in English or in the report's language; the validator accepts both (Russian names in brackets).
 
-1. **Answer** (Главное / Резюме). 200–400 words that stand on their own: the answer to the question first, then the 3–5 findings it rests on, then one line on confidence and the biggest open gap. A reader who stops here must be able to act. No references to later sections ("see finding 3"), no internal labels or codes, no jargon the reader has not been given.
+1. **Answer** (Главное / Резюме). 200–400 words that stand on their own: the answer to the question first, then the 3–5 findings it rests on, then one line on confidence and the biggest open gap. A reader who stops here must be able to act. No references to later sections ("see finding 3"), no internal labels or codes, no jargon the reader has not been given. In deep and ultradeep, when the decision was assumed rather than given by the person, the first line of this section says so and names it (method.md, phase 1).
 2. **Question and method** (Вопрос и метод). The question, the decision it feeds, boundaries, assumptions, and in two or three sentences how the research was done.
 3. **Findings** (Находки). 3–8 findings, each a heading that states the finding as a sentence, then the argument from evidence. As long as the evidence needs, no longer.
 4. **Conclusions** (Выводы). What follows across findings: patterns, tensions, implications. The author's judgment is allowed here and is worded as judgment.

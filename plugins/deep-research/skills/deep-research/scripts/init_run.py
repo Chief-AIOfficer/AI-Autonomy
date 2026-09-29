@@ -30,9 +30,13 @@ Mode: {mode}. Created: {date}. This brief is frozen; amendments go to the report
 
 ## Boundaries
 
+## Form of the answer
+
 ## Evidence rules
 
 ## Assumptions
+
+For each axis (decision, boundaries, form, neutral wording): from the person or assumed.
 
 ## Tools
 """
