@@ -12,6 +12,8 @@ Different machines have different tools. Before planning, check what exists: the
 | Answer a question about a page | `WebFetch` | – |
 | Raw text of a page (quotes, tables, numbers) | `WebFetch` (summarized, not raw) | Bright Data `scrape_as_markdown`, Tavily `tavily_extract`, Firecrawl `scrape`, Jina Reader |
 | Page behind bot protection, CAPTCHA, JS rendering | – | Bright Data `scrape_as_markdown` (Web Unlocker), Firecrawl |
+| Raw text from this machine's own network (sites that refuse cloud IPs, Russian state and bank sites) | `python3 scripts/fetch_raw.py URL` | – |
+| Page that needs a real browser or the user's login | – | Claude in Chrome (the user's own browser, see "The user's browser") |
 | Crawl a whole site or documentation | – | Apify `website-content-crawler`, Firecrawl `crawl`, Tavily `tavily_crawl` |
 | Reddit | none (built-ins are blocked by Reddit) | Bright Data `web_data_reddit_posts`, Apify `reddit-scraper-lite` |
 | LinkedIn, company databases | – | Bright Data `web_data_linkedin_*`, `web_data_crunchbase_company` |
@@ -22,7 +24,20 @@ Different machines have different tools. Before planning, check what exists: the
 
 **Subagents use the same ladder.** `WebSearch` works inside subagents when it is allowed in the user's settings; do not steer subagents to a paid tool by default. If a tool is denied inside a subagent, the subagent says so in its file and uses the next tool in the class.
 
-**One stubborn page:** summarizing fetch, then raw text, then unlocker. An empty or negative answer from the summarizing fetch is where you start climbing, not where you stop.
+**One stubborn page:** summarizing fetch, then raw text, then unlocker, then `scripts/fetch_raw.py`, then the user's browser. An empty or negative answer from the summarizing fetch is where you start climbing, not where you stop. For a site that already failed in this run (Russian state sites, banks, cbr.ru, cntd.ru), start at `fetch_raw.py`: cloud fetchers run on foreign data-center IPs that these sites refuse, and they do not trust the Russian Trusted Root CA.
+
+**URLs with non-ASCII characters** (Cyrillic paths, `.рф` hosts) are encoded before any fetch tool gets them: `python3 scripts/fetch_raw.py URL --encode-only`. Bright Data rejects them unencoded, and some sites answer 404.
+
+**`fetch_raw.py` verdicts** say where to go next: `ok` read the text file it names; `network` the site drops foreign IPs (the user can route the domain outside their VPN, otherwise the browser); `antibot` or `blocked` the browser; `not_found` search for the new address. It paces requests to one host (4–12 s by default) across parallel collectors; do not lower the delay.
+
+### The user's browser
+
+If Claude in Chrome is available, it is the last rung: a real browser, the user's network and the user's own logins (paid subscriptions included). It is slow and there is one of it, so:
+
+- **Only the orchestrator drives it, never a collector.** Collectors that hit `antibot`, `blocked` or a paywall add the URL to a "Needs browser" list at the end of their file and move on. After collection the orchestrator opens that list in one pass.
+- **Read like a person.** One tab, pages one at a time, 20–60 s between pages of one site, a scroll or two before reading, at most about 15 pages of one site per run. Accounts get flagged for crawling; losing the user's subscription costs more than a missing source.
+- **Never type a password or accept terms.** If a page wants a login, ask the user to log in themselves in that browser and wait.
+- A page read in the browser is cited like any other: URL, date, verbatim quote.
 
 Write the ladder you built into `00_brief.md` (section "Tools") so collectors and verifiers get the same one.
 
@@ -108,6 +123,7 @@ Every collector prompt contains:
 ```
 
 - A closing section "Not found" with what was searched and with which queries and tools.
+- A section "Needs browser" with URLs that returned `antibot`, `blocked` or a paywall on every rung the collector may use.
 - A short final answer: count of findings and the 3 strongest. The findings stay in the file; the orchestrator reads the file, not a pasted dump.
 
 Collectors run on a cheaper model than the orchestrator when the work is searching and copying quotes; judgment-heavy synthesis and verification stay on a strong model.

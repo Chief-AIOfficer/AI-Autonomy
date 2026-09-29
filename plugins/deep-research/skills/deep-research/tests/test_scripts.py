@@ -6,12 +6,14 @@ import os
 import re
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 import check_links  # noqa: E402
+import fetch_raw  # noqa: E402
 import init_run  # noqa: E402
 import md_to_html  # noqa: E402
 import validate_report  # noqa: E402
@@ -126,6 +128,49 @@ class TestCheckLinks(unittest.TestCase):
                 self.assertEqual(check_links.classify('https://x.org', 1)[0], kind)
         finally:
             check_links.status = orig
+
+
+class TestFetchRaw(unittest.TestCase):
+    def test_encode_url_cyrillic_path_query_and_host(self):
+        self.assertEqual(fetch_raw.encode_url('https://www.tadviser.ru/index.php/Компания:Центр_(РНКО)?q=НКО'),
+                         'https://www.tadviser.ru/index.php/%D0%9A%D0%BE%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D1%8F:'
+                         '%D0%A6%D0%B5%D0%BD%D1%82%D1%80_(%D0%A0%D0%9D%D0%9A%D0%9E)?q=%D0%9D%D0%9A%D0%9E')
+        self.assertEqual(fetch_raw.encode_url('https://кремль.рф/a'), 'https://xn--e1ajeds9e.xn--p1ai/a')
+
+    def test_encode_url_keeps_already_encoded(self):
+        u = 'https://ru.wikipedia.org/wiki/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA?a=1&b=%20'
+        self.assertEqual(fetch_raw.encode_url(u), u)
+
+    def test_verdicts(self):
+        long = 'текст статьи ' * 300
+        self.assertEqual(fetch_raw.verdict(200, 'Статья', long), 'ok')
+        self.assertEqual(fetch_raw.verdict(200, 'Проверяем браузер', 'Подождите'), 'antibot')
+        self.assertEqual(fetch_raw.verdict(200, '', ''), 'antibot')
+        self.assertEqual(fetch_raw.verdict(403, '403 Forbidden', 'nginx'), 'blocked')
+        self.assertEqual(fetch_raw.verdict(404, 'Not found', 'нет'), 'not_found')
+        self.assertEqual(fetch_raw.verdict(404, 'Платежный центр', long), 'ok')  # tadviser answers 404 with content
+
+    def test_html_to_text_drops_scripts_keeps_title_and_cells(self):
+        title, text = fetch_raw.html_to_text(
+            '<html><head><title> Банк  России </title><script>var x=1</script></head>'
+            '<body><p>Первый&nbsp;абзац</p><table><tr><td>A</td><td>1</td></tr></table></body></html>')
+        self.assertEqual(title, 'Банк России')
+        self.assertIn('Первый абзац', text)
+        self.assertIn('A | 1', text)
+        self.assertNotIn('var x', text)
+
+    def test_bundled_ru_ca_matches_pin(self):
+        self.assertTrue(fetch_raw.ru_ca_ok())
+
+    def test_pace_spaces_requests_to_one_host(self):
+        with tempfile.TemporaryDirectory() as d:
+            fetch_raw.PACE_FILE = Path(d) / 'pace.json'
+            t = time.time()
+            fetch_raw.pace('example.ru', 0.3, 0.3)
+            fetch_raw.pace('other.ru', 0.3, 0.3)
+            self.assertLess(time.time() - t, 0.2)
+            fetch_raw.pace('example.ru', 0.3, 0.3)
+            self.assertGreaterEqual(time.time() - t, 0.29)
 
 
 class TestMdToHtml(unittest.TestCase):

@@ -57,6 +57,7 @@ If the user's own instructions name a location for research output, use it. Othe
 
 - `scripts/init_run.py`: create the run folder and brief skeleton.
 - `scripts/validate_report.py`: structure, citations against bibliography, placeholders, length ceiling.
+- `scripts/fetch_raw.py`: raw text of a page from this machine's network, paced like a person, trusting the Russian root CA; also encodes non-ASCII URLs.
 - `scripts/check_links.py`: every bibliography URL resolves; sites that block scripts are listed for a manual check, not failed.
 - `scripts/md_to_html.py`: render `report.md` to `report.html` with the template in `templates/`.
 
