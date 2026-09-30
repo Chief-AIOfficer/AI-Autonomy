@@ -149,6 +149,7 @@ class TestFetchRaw(unittest.TestCase):
         self.assertEqual(fetch_raw.verdict(403, '403 Forbidden', 'nginx'), 'blocked')
         self.assertEqual(fetch_raw.verdict(404, 'Not found', 'нет'), 'not_found')
         self.assertEqual(fetch_raw.verdict(404, 'Платежный центр', long), 'ok')  # tadviser answers 404 with content
+        self.assertEqual(fetch_raw.verdict(307, 'Redirecting', 'Redirecting to https://docs.cntd.ru/'), 'error')
 
     def test_html_to_text_drops_scripts_keeps_title_and_cells(self):
         title, text = fetch_raw.html_to_text(

@@ -180,15 +180,18 @@ def verdict(status: int, title: str, text: str) -> str:
         return 'blocked' if len(text) < 1500 else 'ok'
     if status in (404, 410):
         return 'not_found' if len(text) < 1500 else 'ok'
-    if status >= 400:
+    if status >= 300:  # a redirect still unresolved here is a loop, not a page
         return 'error'
     return 'ok' if text.strip() else 'antibot'
 
 
 def request(url: str, timeout: float, ctx: ssl.SSLContext):
     req = urllib.request.Request(url, headers=HEADERS)
+    # cookies kept across redirects: some sites (cntd.ru) set one and redirect to the same URL
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(),
+                                         urllib.request.HTTPSHandler(context=ctx))
     try:
-        r = urllib.request.urlopen(req, timeout=timeout, context=ctx)
+        r = opener.open(req, timeout=timeout)
     except urllib.error.HTTPError as e:
         r = e
     body = r.read()
@@ -221,6 +224,10 @@ def fetch(url: str, out: Path, timeout: float, min_delay: float, max_delay: floa
     except urllib.error.URLError as e:
         res['verdict'] = 'tls' if is_cert_error(e) else 'network'
         res['hint'] = f'{HINTS[res["verdict"]]} ({e.reason})'
+        if isinstance(e.reason, socket.gaierror):
+            res['hint'] = ('The name did not resolve. Some Russian state domains do not resolve '
+                           'through foreign DNS (1.1.1.1, 8.8.8.8 behind a VPN); try the user\'s browser. '
+                           f'({e.reason})')
         return res
     except (socket.timeout, TimeoutError, ConnectionError) as e:
         res['verdict'], res['hint'] = 'network', f'{HINTS["network"]} ({e})'

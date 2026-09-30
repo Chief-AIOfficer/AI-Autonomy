@@ -1,6 +1,6 @@
 {
   "name": "deep-research",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Multi-source research with a frozen brief, parallel collectors, independent claim verification and a cited report in Markdown and HTML",
   "author": {
     "name": "Alexander Ulyanov"
