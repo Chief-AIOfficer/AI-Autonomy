@@ -160,6 +160,14 @@ class TestFetchRaw(unittest.TestCase):
         self.assertIn('A | 1', text)
         self.assertNotIn('var x', text)
 
+    def test_dns_wire_query_and_answer(self):
+        q = fetch_raw.dns_query('council.gov.ru')
+        self.assertIn(b'\x07council\x03gov\x02ru\x00\x00\x01\x00\x01', q)
+        answer = lambda ip: b'\xc0\x0c\x00\x01\x00\x01\x00\x00\x00\x3c\x00\x04' + bytes(ip)
+        cname = b'\xc0\x0c\x00\x05\x00\x01\x00\x00\x00\x3c\x00\x02\xc0\x0c'
+        msg = b'\x00\x00\x81\x80\x00\x01\x00\x03\x00\x00\x00\x00' + q[12:] + cname + answer([95, 173, 132, 31]) + answer([95, 173, 132, 73])
+        self.assertEqual(fetch_raw.parse_a_records(msg), ['95.173.132.31', '95.173.132.73'])
+
     def test_bundled_ru_ca_matches_pin(self):
         self.assertTrue(fetch_raw.ru_ca_ok())
 

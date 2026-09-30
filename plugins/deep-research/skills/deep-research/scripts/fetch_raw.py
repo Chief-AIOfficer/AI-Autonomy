@@ -22,7 +22,7 @@ Exit 0 on ok, 1 otherwise. The text goes to --out (a temp file by default).
 """
 
 import argparse
-import fcntl
+import base64
 import gzip
 import hashlib
 import json
@@ -31,6 +31,7 @@ import random
 import re
 import socket
 import ssl
+import subprocess
 import sys
 import tempfile
 import time
@@ -38,6 +39,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zlib
+
+try:
+    import fcntl  # Unix only; on Windows pacing still works within one process
+except ImportError:
+    fcntl = None
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -49,8 +55,12 @@ HEADERS = {
     'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.7,en;q=0.6',
     'Accept-Encoding': 'gzip, deflate',
 }
-RU_CA = Path(__file__).resolve().parent.parent / 'certs' / 'russian_trusted_root_ca.pem'
-RU_CA_SHA256 = 'd26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31'
+CERTS = Path(__file__).resolve().parent.parent / 'certs'
+# Mintsifry root and two intermediates signed by it: some servers (rosstat.gov.ru) do not send the
+# intermediate. Sub CA from gu-st.ru expires 2027-03-06, subca_ssl_rsa2024 from nuc-cdp expires 2029-07-19.
+RU_CA = {CERTS / 'russian_trusted_root_ca.pem': 'd26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31',
+         CERTS / 'russian_trusted_sub_ca.pem': 'bbbde2103e790b999ec62bd03cf625a5a2e7c316e10afe6a490eedead8b3fd9b',
+         CERTS / 'russian_trusted_sub_ca_2024.pem': '2155785036c900dbb5f1bb2a1569c80c55595bd6bf94867a29bbddbc7d88a3f2'}
 PACE_FILE = Path(tempfile.gettempdir()) / 'deep_research_fetch_pace.json'
 ANTIBOT = re.compile(
     r'captcha|ddos-guard|qrator|servicepipe|variti|checking your browser|just a moment|'
@@ -82,11 +92,9 @@ def encode_url(url: str) -> str:
 
 
 def ru_ca_ok() -> bool:
-    """The bundled CA file exists and is the pinned certificate."""
-    if not RU_CA.exists():
-        return False
-    der = ssl.PEM_cert_to_DER_cert(RU_CA.read_text())
-    return hashlib.sha256(der).hexdigest() == RU_CA_SHA256
+    """The bundled CA files exist and are the pinned certificates."""
+    return all(f.exists() and hashlib.sha256(ssl.PEM_cert_to_DER_cert(f.read_text())).hexdigest() == pin
+               for f, pin in RU_CA.items())
 
 
 def ssl_context(with_ru_ca: bool) -> ssl.SSLContext:
@@ -94,7 +102,8 @@ def ssl_context(with_ru_ca: bool) -> ssl.SSLContext:
     if Path('/etc/ssl/cert.pem').exists():  # macOS system roots; python.org builds ship none
         ctx.load_verify_locations('/etc/ssl/cert.pem')
     if with_ru_ca:
-        ctx.load_verify_locations(str(RU_CA))
+        for f in RU_CA:
+            ctx.load_verify_locations(str(f))
     return ctx
 
 
@@ -102,7 +111,8 @@ def pace(host: str, min_delay: float, max_delay: float) -> None:
     """Wait so that requests to one host are min..max seconds apart, across processes."""
     PACE_FILE.touch(exist_ok=True)
     with open(PACE_FILE, 'r+') as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
+        if fcntl:
+            fcntl.flock(f, fcntl.LOCK_EX)
         try:
             state = json.loads(f.read() or '{}')
         except ValueError:
@@ -203,6 +213,54 @@ def request(url: str, timeout: float, ctx: ssl.SSLContext):
     return r.status if hasattr(r, 'status') else r.code, r.geturl(), r.headers.get('Content-Type', ''), body
 
 
+DOH_URL = 'https://common.dot.dns.yandex.net/dns-query'  # a Russian resolver: some .gov.ru names fail abroad
+
+
+def dns_query(host: str) -> bytes:
+    """A-record query in DNS wire format (RFC 1035), id 0 as RFC 8484 recommends."""
+    qname = b''.join(bytes([len(p)]) + p for p in host.encode('idna').split(b'.')) + b'\0'
+    return b'\0\0\x01\0\0\x01\0\0\0\0\0\0' + qname + b'\0\x01\0\x01'
+
+
+def parse_a_records(msg: bytes) -> list:
+    """IPv4 addresses from the answer section of a DNS response."""
+    ancount = int.from_bytes(msg[6:8], 'big')
+    i = 12
+    while msg[i]:  # skip the question name
+        i += msg[i] + 1
+    i += 5
+    ips = []
+    for _ in range(ancount):
+        i += 2 if msg[i] >= 0xC0 else msg[i:].index(0) + 1  # name: pointer or labels
+        rtype, rdlen = int.from_bytes(msg[i:i + 2], 'big'), int.from_bytes(msg[i + 8:i + 10], 'big')
+        i += 10
+        if rtype == 1 and rdlen == 4:
+            ips.append('.'.join(str(b) for b in msg[i:i + 4]))
+        i += rdlen
+    return ips
+
+
+def doh_resolve(host: str, timeout: float = 10) -> list:
+    """Resolve through Yandex DNS-over-HTTPS. It speaks only HTTP/2, which urllib lacks, so curl."""
+    q = base64.urlsafe_b64encode(dns_query(host)).decode().rstrip('=')
+    try:
+        out = subprocess.run(['curl', '-s', '--http2', '--max-time', str(timeout),
+                              '-H', 'accept: application/dns-message', f'{DOH_URL}?dns={q}'],
+                             capture_output=True, timeout=timeout + 5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return parse_a_records(out) if len(out) > 12 else []
+
+
+def pin_host(host: str, ip: str) -> None:
+    """Make this process connect to ip for host; SNI and the Host header stay the name."""
+    orig = socket.getaddrinfo
+
+    def getaddrinfo(h, *args, **kw):
+        return orig(ip if h == host else h, *args, **kw)
+    socket.getaddrinfo = getaddrinfo
+
+
 def is_cert_error(e: Exception) -> bool:
     reason = getattr(e, 'reason', e)
     return isinstance(reason, ssl.SSLCertVerificationError)
@@ -212,7 +270,18 @@ def fetch(url: str, out: Path, timeout: float, min_delay: float, max_delay: floa
     url = encode_url(url)
     res = {'url': url, 'final_url': url, 'status': 0, 'verdict': 'error', 'chars': 0,
            'title': '', 'tls': 'default', 'out': str(out), 'hint': ''}
-    pace(urllib.parse.urlsplit(url).hostname or '', min_delay, max_delay)
+    host = urllib.parse.urlsplit(url).hostname or ''
+    pace(host, min_delay, max_delay)
+    try:
+        socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        try:
+            ips = doh_resolve(host)
+        except (OSError, ValueError, IndexError):
+            ips = []
+        if ips:
+            pin_host(host, ips[0])
+            res['dns'] = f'doh:{ips[0]}'
     try:
         try:
             status, final, ctype, body = request(url, timeout, ssl_context(False))

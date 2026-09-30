@@ -28,7 +28,7 @@ Different machines have different tools. Before planning, check what exists: the
 
 **URLs with non-ASCII characters** (Cyrillic paths, `.рф` hosts) are encoded before any fetch tool gets them: `python3 scripts/fetch_raw.py URL --encode-only`. Bright Data rejects them unencoded, and some sites answer 404.
 
-**`fetch_raw.py` verdicts** say where to go next: `ok` read the text file it names; `network` the site drops foreign IPs (the user can route the domain outside their VPN, otherwise the browser); `antibot` or `blocked` the browser; `not_found` search for the new address. It paces requests to one host (4–12 s by default) across parallel collectors; do not lower the delay.
+**`fetch_raw.py` verdicts** say where to go next: `ok` read the text file it names; `network` the site drops foreign IPs (the user can route the domain outside their VPN, otherwise the browser); `antibot` or `blocked` the browser; `not_found` search for the new address. It paces requests to one host (4–12 s by default) across parallel collectors; do not lower the delay. When the system DNS cannot resolve a name (some `.gov.ru` fail through foreign resolvers behind a VPN), it resolves the name through Yandex DNS-over-HTTPS with `curl` and says so in the `dns` field.
 
 ### The user's browser
 
