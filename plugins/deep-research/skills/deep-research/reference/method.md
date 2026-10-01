@@ -39,7 +39,7 @@ If Claude in Chrome is available, it is the last rung: a real browser, the user'
 - **Never type a password or accept terms.** If a page wants a login, ask the user to log in themselves in that browser and wait.
 - A page read in the browser is cited like any other: URL, date, verbatim quote.
 
-Write the ladder you built into `00_brief.md` (section "Tools") so collectors and verifiers get the same one.
+Write the ladder you built into `_work/01_brief.md` (section "Tools") so collectors and verifiers get the same one.
 
 ## 1. Brief
 
@@ -72,7 +72,7 @@ The gate and the plan checkpoint (phase 2, step 6) are two separate stops by des
 
 ### The brief
 
-Write `00_brief.md` in the run folder and treat it as frozen:
+Write `_work/01_brief.md` in the run folder and treat it as frozen:
 
 - **Question**, in one sentence, neutrally worded, and **the decision it feeds**.
 - **Reader**: who acts on the report and what they already know.
@@ -99,7 +99,7 @@ If later evidence forces a change to the brief, record the amendment and why in 
 
    Swap an angle when the topic needs another (for a message or positioning, "the audience is hostile" beats the resource shift). Then write the selection criteria from the brief's decision, before sorting, not after: criteria written after the list describe the option you already like. Keep 4–8 candidates; each becomes a subquestion ("does evidence support X, for whom, when"). The dropped ones go to the method section with one line of reason each.
 4. **Organizations to sweep.** For every subquestion about what a specific organization says, measures, sells, charges or requires, list that organization's own properties: product docs, engineering blog, marketing blog, help center, changelog, press releases, a regulator's database of acts. For a regulator, list every kind of document it issues, not only the binding ones: laws and regulations, instructions, information and methodological letters, recommendations, explanations and FAQ, consultation papers. What a regulator "recommends" usually lives in a letter, not in an act. They will be searched directly (see "When to stop").
-5. **Collectors.** Group subquestions into collectors that do not overlap. Each collector gets: the brief path, the subquestions it owns, what it must not cover (owned by another collector), the tool ladder, the output file path, and the output format below.
+5. **Collectors.** Group subquestions into collectors that do not overlap. Each collector gets: the brief path, the subquestions it owns, what it must not cover (owned by another collector), the tool ladder, the output file path (`<run>/_work/03_collect_<ID>_<topic>.md`, see the layout in SKILL.md), and the output format below.
 6. **Checkpoint (deep and ultradeep, only when a person is present).** One short message: the brief, the subquestions with tags, the collectors, rough cost (number of agents, expected time). One question: all at once or in waves. Then wait. In autonomous runs skip it and note that in the method section.
 
 ## 3. Collect
@@ -159,6 +159,6 @@ Before each new batch, write four lines in your working notes:
 
 **Primary first.** A claim about a law rests on the text of the act; about a product, on the vendor's docs; about a study, on the paper. Where a primary source exists, a secondary one may point to it but does not replace it. Contested claims, or claims without a single primary source, need three independent sources.
 
-**Contradictions are records, not averages.** When sources disagree, write a record in `contradictions.md`: the two claims, their sources, the dimension of the disagreement (definition, period, population, measurement, causal claim, or a flat contradiction), a candidate explanation, and status (open, resolved, cannot be resolved). The report shows open ones; a claim involved in an open contradiction cannot have high confidence.
+**Contradictions are records, not averages.** When sources disagree, write a record in `_work/04_crosscheck_contradictions.md`: the two claims, their sources, the dimension of the disagreement (definition, period, population, measurement, causal claim, or a flat contradiction), a candidate explanation, and status (open, resolved, cannot be resolved). The report shows open ones; a claim involved in an open contradiction cannot have high confidence.
 
 **Confidence per claim.** High: primary source, verbatim passage, no open contradiction. Medium: one good secondary source, or a primary source with a gap (a number read off a chart, a period not stated). Low: single weak source, opinion, or open contradiction. Low-confidence claims appear in the report as such, never as settled fact.

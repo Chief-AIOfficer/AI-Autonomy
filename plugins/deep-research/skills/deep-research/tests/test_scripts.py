@@ -46,7 +46,9 @@ class TestInitRun(unittest.TestCase):
             b = init_run.create_run('Рынок ИИ: цены / 2026', Path(d), 'deep', day)
             self.assertEqual(a.name, 'Рынок_ИИ_цены_2026_20260927')
             self.assertEqual(b.name, a.name + '_2')
-            self.assertIn('Mode: deep', (a / '00_brief.md').read_text(encoding='utf-8'))
+            self.assertIn('Mode: deep', (a / '_work' / '01_brief.md').read_text(encoding='utf-8'))
+            self.assertTrue((a / '_work' / '00_run.json').is_file())
+            self.assertEqual(sorted(p.name for p in a.iterdir()), ['_work'])
 
     def test_parent_dir_priority(self):
         os.environ['DEEP_RESEARCH_DIR'] = '/tmp/env-dir'

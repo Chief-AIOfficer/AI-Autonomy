@@ -2,7 +2,7 @@
 
 ## 5. Draft
 
-Write the report in the language of the question. Write it to `report.md` in the run folder section by section (one write or edit per section), so a long report never depends on a single huge output.
+Write the report in the language of the question. Write the draft to `_work/05_draft_report.md` section by section (one write or edit per section), so a long report never depends on a single huge output. The final `report.md` in the run folder root appears only after verification and critique are applied (phase 8). File names for every phase are fixed in the layout table in SKILL.md.
 
 ### Structure
 
@@ -47,7 +47,7 @@ Types: `note` (neutral), `tip` or `success` (a positive finding), `warning` (a c
 
 ## 7. Critique (deep and ultradeep)
 
-After verification, a fresh subagent reads the whole report as a skeptical expert in the field and answers: what important aspect is missing; which conclusion is stronger than its evidence; which source is weaker than the report treats it; what an informed opponent would say. If the critique reveals a real gap in knowledge (not just wording), go back to collection with targeted queries, time-boxed, and send any new claims through verification. Record what the critique changed in the method section.
+After verification, a fresh subagent reads the whole report as a skeptical expert, writing to `_work/07_critique.md`, in the field and answers: what important aspect is missing; which conclusion is stronger than its evidence; which source is weaker than the report treats it; what an informed opponent would say. If the critique reveals a real gap in knowledge (not just wording), go back to collection with targeted queries, time-boxed, and send any new claims through verification. Record what the critique changed in the method section.
 
 ## 8. Deliver
 
@@ -61,6 +61,6 @@ python3 <skill>/scripts/check_links.py <run>/report.md
 python3 <skill>/scripts/md_to_html.py <run>/report.md
 ```
 
-`<skill>` is the folder this file lives in, one level up. `validate_report.py` fails on missing sections, citations without a bibliography entry, placeholders, or a report over the mode's ceiling; fix and re-run. `check_links.py` fails on dead links; sites that refuse scripts are listed for a manual check instead (the verifiers already opened them). `md_to_html.py` writes `report.html` next to `report.md`.
+`<skill>` is the folder this file lives in, one level up. `validate_report.py` fails on missing sections, citations without a bibliography entry, placeholders, or a report over the mode's ceiling; fix and re-run. `check_links.py` fails on dead links; sites that refuse scripts are listed for a manual check instead (the verifiers already opened them). `md_to_html.py` writes `report.html` next to `report.md`. Before delivering, check the root holds only `report.md` and `report.html`; anything else moves to `_work/` under its phase prefix.
 
 Deliver both files. In the final message give the paths, the answer in two or three sentences, and the verification counts.

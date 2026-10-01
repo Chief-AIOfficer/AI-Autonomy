@@ -6,6 +6,10 @@
 Parent folder, first match wins: --dir, the DEEP_RESEARCH_DIR environment
 variable, ~/Documents/Research. The run folder is <Topic>_<YYYYMMDD>; if it
 exists, a numeric suffix is added. Prints the path of the run folder.
+
+The root of the run folder is for report.md and report.html only. Everything
+intermediate goes to _work/ with the phase number in front of the name (see
+the layout table in SKILL.md), starting with 00_run.json and 01_brief.md.
 """
 
 import argparse
@@ -17,6 +21,7 @@ import sys
 from pathlib import Path
 
 MODES = ('quick', 'standard', 'deep', 'ultradeep')
+WORK_DIR = '_work'
 
 BRIEF = """# Brief: {topic}
 
@@ -64,9 +69,10 @@ def create_run(topic: str, parent: Path, mode: str, today=None) -> Path:
     while run.exists():
         run = base.with_name(f'{base.name}_{n}')
         n += 1
-    run.mkdir(parents=True)
-    (run / '00_brief.md').write_text(BRIEF.format(topic=topic, mode=mode, date=today.isoformat()), encoding='utf-8')
-    (run / 'run.json').write_text(json.dumps(
+    work = run / WORK_DIR
+    work.mkdir(parents=True)
+    (work / '01_brief.md').write_text(BRIEF.format(topic=topic, mode=mode, date=today.isoformat()), encoding='utf-8')
+    (work / '00_run.json').write_text(json.dumps(
         {'topic': topic, 'mode': mode, 'created': today.isoformat()}, ensure_ascii=False, indent=2) + '\n',
         encoding='utf-8')
     return run

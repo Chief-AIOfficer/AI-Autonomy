@@ -31,18 +31,37 @@ Ceilings, not targets: a short report that is fully grounded beats a long one.
 ## Phases
 
 0. **Tools.** Find out which search and fetch tools this machine has and build the retrieval ladder from them.
-1. **Brief.** Check the request on four axes: the decision it feeds, boundaries, form of the answer, neutral wording. In deep and ultradeep, when a person is present and an axis is empty or the wording is loaded, ask up to three questions in one message before planning. Then freeze the question, decision, boundaries, form and assumptions in `00_brief.md`.
+1. **Brief.** Check the request on four axes: the decision it feeds, boundaries, form of the answer, neutral wording. In deep and ultradeep, when a person is present and an axis is empty or the wording is loaded, ask up to three questions in one message before planning. Then freeze the question, decision, boundaries, form and assumptions in `_work/01_brief.md`.
 2. **Plan.** Subquestions with difficulty tags, perspectives, answer hypotheses from four angles when the question asks what to do or which option to take, the organizations whose own sites must be swept, the collectors and what each owns. In deep and ultradeep, when a person is present, show the plan and ask once: launch all at once or in waves.
-3. **Collect.** Parallel collectors write findings with verbatim quotes to files as they go. Stop by the rules in method.md: an effort floor per subquestion, saturation, and a separate response to being stuck.
+3. **Collect.** Parallel collectors write findings with verbatim quotes to `_work/03_collect_*` files as they go. Stop by the rules in method.md: an effort floor per subquestion, saturation, and a separate response to being stuck.
 4. **Cross-check.** Independence of sources, contradictions as records, a confidence label per claim.
 5. **Draft.** Answer first, then the findings that carry it.
 6. **Verify.** Atomic claims go to verifiers who never see the draft; in deep and ultradeep a section check reads whole sections; a last check asks whether each conclusion follows from confirmed claims. **Not optional in any mode.** If it cannot run, the report title and first line say `UNVERIFIED DRAFT`.
 7. **Critique** (deep, ultradeep). A fresh agent reads the report as a skeptical expert and names what is missing or overstated; fix or say why not.
-8. **Deliver.** `report.md` and `report.html` in the run folder, both validated.
+8. **Deliver.** `report.md` and `report.html` in the run folder root, both validated; everything else stays in `_work/`.
 
 ## Where results go
 
-If the user's own instructions name a location for research output, use it. Otherwise `~/Documents/Research/<Topic>_<YYYYMMDD>/`, or the directory in the environment variable `DEEP_RESEARCH_DIR` if it is set. Create the folder with `python3 scripts/init_run.py` (see report.md). Everything of the run lives in that one folder: brief, collector files, verification queue and results, report.
+If the user's own instructions name a location for research output, use it. Otherwise `~/Documents/Research/<Topic>_<YYYYMMDD>/`, or the directory in the environment variable `DEEP_RESEARCH_DIR` if it is set. Create the folder with `python3 scripts/init_run.py` (see report.md). Everything of the run lives in that one folder, split in two:
+
+- **Run folder root: only what the reader opens.** `report.md` and `report.html`. Nothing else goes there, so a person who opens the folder sees the result and not the process.
+- **`_work/`: everything intermediate.** Every file name starts with the phase number and the stage, so the name says which step made it and the files sort in the order they were born. Do not invent other names; if a step needs a file not in this table, keep its phase prefix.
+
+| Phase | File in `_work/` |
+|---|---|
+| 0 | `00_run.json` |
+| 1 | `01_brief.md` |
+| 2 | `02_plan.md` |
+| 3 | `03_collect_<ID>_<topic>.md`, one per collector (`03_collect_C1_цены.md`) |
+| 4 | `04_crosscheck_contradictions.md` |
+| 5 | `05_draft_report.md` (the draft before verification), `05_draft_bib.tsv`, `05_draft_method.md` |
+| 6a | `06a_verify-claims_queue.jsonl`, `06a_verify-claims_prompts_<batch>.md`, `06a_verify-claims_results_<batch>.jsonl` |
+| 6b | `06b_verify-sections_prompt_<S>.md`, `06b_verify-sections_results_<S>.jsonl` |
+| 6c | `06c_verify-conclusions_input.md`, `06c_verify-conclusions_check.md` |
+| 7 | `07_critique.md` |
+| 8 | `08_deliver_build.py`, `08_deliver_keymap.json` and any other helper that assembles the final report |
+
+The final `report.md` is written to the root only after verification and critique are applied. Helper scripts in `_work/` read their inputs from `_work/` and write `../report.md`.
 
 ## Non-negotiables
 
@@ -55,7 +74,7 @@ If the user's own instructions name a location for research output, use it. Othe
 
 ## Scripts (Python 3 standard library only)
 
-- `scripts/init_run.py`: create the run folder and brief skeleton.
+- `scripts/init_run.py`: create the run folder, its `_work/` subfolder and the brief skeleton.
 - `scripts/validate_report.py`: structure, citations against bibliography, placeholders, length ceiling.
 - `scripts/fetch_raw.py`: raw text of a page from this machine's network, paced like a person, trusting the Russian root CA; also encodes non-ASCII URLs.
 - `scripts/check_links.py`: every bibliography URL resolves; sites that block scripts are listed for a manual check, not failed.
