@@ -1,0 +1,10 @@
+{
+  "name": "anti-ai-writing",
+  "version": "3.0.0",
+  "description": "Русский текст, который звучит как написанный человеком: без канцелярита, пустых контрастов и обвязки чата, с тире и кавычками по каналу набора, без выдуманных фактов",
+  "author": {
+    "name": "Alexander Ulyanov"
+  },
+  "license": "MIT",
+  "keywords": ["writing", "editing", "russian", "style", "proofreading"]
+}
