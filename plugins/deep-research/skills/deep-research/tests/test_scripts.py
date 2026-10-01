@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -169,6 +170,40 @@ class TestFetchRaw(unittest.TestCase):
         cname = b'\xc0\x0c\x00\x05\x00\x01\x00\x00\x00\x3c\x00\x02\xc0\x0c'
         msg = b'\x00\x00\x81\x80\x00\x01\x00\x03\x00\x00\x00\x00' + q[12:] + cname + answer([95, 173, 132, 31]) + answer([95, 173, 132, 73])
         self.assertEqual(fetch_raw.parse_a_records(msg), ['95.173.132.31', '95.173.132.73'])
+
+    def test_https_kept_on_downgrade_redirect(self):
+        up = fetch_raw.https_upgrade
+        self.assertEqual(up('https://egrul.nalog.ru/', 'http://egrul.nalog.ru/index.html'),
+                         'https://egrul.nalog.ru/index.html')
+        self.assertEqual(up('https://a.ru/x', 'http://a.ru:80/y'), 'https://a.ru/y')
+        self.assertEqual(up('https://a.ru/x', 'http://b.ru/x'), 'http://b.ru/x')  # other host: follow the site
+        self.assertEqual(up('http://a.ru/x', 'http://a.ru/y'), 'http://a.ru/y')
+        self.assertEqual(up('https://a.ru/x', 'http://a.ru/x'), 'http://a.ru/x')  # upgrading would loop
+
+    def test_vpn_interfaces(self):
+        for name in ('utun4', 'tun0', 'wg0', 'awg0', 'ppp0', 'ipsec0'):
+            self.assertTrue(fetch_raw.VPN_IFACE.match(name), name)
+        for name in ('en0', 'eth0', 'wlan0', 'bridge100', ''):
+            self.assertFalse(fetch_raw.VPN_IFACE.match(name), name)
+
+    def test_route_hints(self):
+        vpn = {'ip': '194.226.26.36', 'interface': 'utun4', 'vpn': True, 'tcp': False}
+        self.assertIn('split-tunnel exceptions', fetch_raw.route_hint('network', 'fas.gov.ru', vpn))
+        self.assertIn('fas.gov.ru', fetch_raw.route_hint('blocked', 'fas.gov.ru', vpn))
+        slow = {'ip': '213.24.64.183', 'interface': 'en0', 'vpn': False, 'tcp': True}
+        self.assertIn('slow', fetch_raw.route_hint('network', 'egrul.nalog.ru', slow))
+        dead = dict(slow, tcp=False)
+        self.assertIn('does not answer', fetch_raw.route_hint('network', 'egrul.nalog.ru', dead))
+        self.assertEqual(fetch_raw.route_hint('blocked', 'x.ru', slow), '')  # outside the VPN a 403 is the site's
+        self.assertEqual(fetch_raw.route_hint('network', 'x.ru', {}), '')
+
+    def test_route_interface_parses_macos_and_linux(self):
+        outs = {'darwin': '   route to: 1.2.3.4\n  gateway: 10.0.0.1\n  interface: utun4\n      flags: <UP>',
+                'linux': '1.2.3.4 dev wg0 table 51820 src 10.12.0.2 uid 0'}
+        for platform, out in outs.items():
+            with mock.patch.object(fetch_raw.sys, 'platform', platform), \
+                 mock.patch.object(fetch_raw.subprocess, 'run', return_value=mock.Mock(stdout=out)):
+                self.assertEqual(fetch_raw.route_interface('1.2.3.4'), 'utun4' if platform == 'darwin' else 'wg0')
 
     def test_bundled_ru_ca_matches_pin(self):
         self.assertTrue(fetch_raw.ru_ca_ok())

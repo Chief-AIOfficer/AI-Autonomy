@@ -15,8 +15,14 @@ where the user is, so it gets the user's network route.
 - If the normal certificate check fails, the page is retried trusting the bundled
   Russian Trusted Root CA (fingerprint pinned below) and the summary says so.
 - A 4xx page that has real content (tadviser answers 404 with the article) is kept.
+- A redirect from https to plain http on the same host is followed over https:
+  egrul.nalog.ru sends / to http://, and port 80 there is closed.
+- On a network failure or a refusal the summary says which network interface the
+  site's address goes through. A VPN interface means the domain is missing from
+  the VPN's split-tunnel exceptions; the hint names the domain to add.
 
-Prints one JSON line: url, final_url, status, verdict, chars, title, tls, out, hint.
+Prints one JSON line: url, final_url, status, verdict, chars, title, tls, out, hint,
+and on network or blocked also route: ip, interface, vpn, tcp (port open or not).
 verdict: ok | not_found | antibot | blocked | network | tls | error.
 Exit 0 on ok, 1 otherwise. The text goes to --out (a temp file by default).
 """
@@ -66,9 +72,9 @@ ANTIBOT = re.compile(
     r'captcha|ddos-guard|qrator|servicepipe|variti|checking your browser|just a moment|'
     r'enable javascript|проверяем браузер|вы не робот|не с ботом|подтвердите, что вы', re.I)
 BLOCKED = {401, 403, 405, 418, 429, 451}
+VPN_IFACE = re.compile(r'^(utun|tun|tap|wg|awg|ppp|ipsec|gpd|zt)\d*', re.I)
 HINTS = {
-    'network': 'Connection refused or timed out: the site likely drops foreign IPs. '
-               'Route this domain outside the VPN, or open it in the user\'s browser.',
+    'network': 'Connection refused or timed out. Open it in the user\'s browser.',
     'antibot': 'Bot check page, not the content. Open it in the user\'s browser (see method.md).',
     'blocked': 'The site refused a script. Open it in the user\'s browser (see method.md).',
     'tls': 'Certificate not trusted even with the Russian root CA. Open it in the user\'s browser.',
@@ -195,10 +201,25 @@ def verdict(status: int, title: str, text: str) -> str:
     return 'ok' if text.strip() else 'antibot'
 
 
+def https_upgrade(old_url: str, new_url: str) -> str:
+    """The redirect target, kept on https when the site downgrades to http on the same host."""
+    old, new = urllib.parse.urlsplit(old_url), urllib.parse.urlsplit(new_url)
+    if old.scheme == 'https' and new.scheme == 'http' and old.hostname == new.hostname:
+        upgraded = urllib.parse.urlunsplit(new._replace(scheme='https', netloc=new.netloc.replace(':80', '')))
+        if upgraded != old_url:  # the same URL again would be a loop; then follow the site
+            return upgraded
+    return new_url
+
+
+class KeepHttps(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return super().redirect_request(req, fp, code, msg, headers, https_upgrade(req.full_url, newurl))
+
+
 def request(url: str, timeout: float, ctx: ssl.SSLContext):
     req = urllib.request.Request(url, headers=HEADERS)
     # cookies kept across redirects: some sites (cntd.ru) set one and redirect to the same URL
-    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(),
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(), KeepHttps(),
                                          urllib.request.HTTPSHandler(context=ctx))
     try:
         r = opener.open(req, timeout=timeout)
@@ -261,6 +282,58 @@ def pin_host(host: str, ip: str) -> None:
     socket.getaddrinfo = getaddrinfo
 
 
+def route_interface(ip: str) -> str:
+    """The network interface the OS sends ip through ('' when it cannot tell)."""
+    cmd = (['route', '-n', 'get', ip] if sys.platform == 'darwin'
+           else ['ip', 'route', 'get', ip] if sys.platform.startswith('linux') else None)
+    if not cmd:
+        return ''
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ''
+    m = re.search(r'interface:\s*(\S+)', out) or re.search(r'\bdev\s+(\S+)', out)
+    return m.group(1) if m else ''
+
+
+def tcp_open(ip: str, port: int, timeout: float = 5) -> bool:
+    try:
+        socket.create_connection((ip, port), timeout=timeout).close()
+        return True
+    except OSError:
+        return False
+
+
+def diagnose_route(url: str) -> dict:
+    """Where the site's address goes and whether its port answers at all."""
+    p = urllib.parse.urlsplit(url)
+    try:
+        ip = socket.getaddrinfo(p.hostname, None, socket.AF_INET)[0][4][0]
+    except (socket.gaierror, OSError, IndexError):
+        return {}
+    iface = route_interface(ip)
+    return {'ip': ip, 'interface': iface, 'vpn': bool(VPN_IFACE.match(iface)),
+            'tcp': tcp_open(ip, p.port or (443 if p.scheme == 'https' else 80))}
+
+
+def route_hint(verdict: str, host: str, route: dict) -> str:
+    """Replace the guess about foreign IPs with what the route shows."""
+    if not route:
+        return ''
+    where = f'{route["ip"]} goes through {route["interface"] or "an unknown interface"}'
+    if route['vpn']:
+        return (f'{where}, a VPN interface: the request left the country. Add {host} to the VPN\'s '
+                f'split-tunnel exceptions (sites that bypass the VPN), reconnect, and retry. '
+                f'Until then, the user\'s browser.')
+    if verdict == 'network' and route['tcp']:
+        return (f'{where}, outside the VPN, and the port accepts connections: the server is slow or this '
+                f'URL hangs. Retry once with a longer --timeout, then the user\'s browser.')
+    if verdict == 'network':
+        return (f'{where}, outside the VPN, and the port does not answer: the site is down or blocks this '
+                f'network too. Open it in the user\'s browser.')
+    return ''
+
+
 def is_cert_error(e: Exception) -> bool:
     reason = getattr(e, 'reason', e)
     return isinstance(reason, ssl.SSLCertVerificationError)
@@ -297,9 +370,12 @@ def fetch(url: str, out: Path, timeout: float, min_delay: float, max_delay: floa
             res['hint'] = ('The name did not resolve. Some Russian state domains do not resolve '
                            'through foreign DNS (1.1.1.1, 8.8.8.8 behind a VPN); try the user\'s browser. '
                            f'({e.reason})')
+        elif res['verdict'] == 'network':
+            add_route(res, url, host, str(e.reason))
         return res
     except (socket.timeout, TimeoutError, ConnectionError) as e:
-        res['verdict'], res['hint'] = 'network', f'{HINTS["network"]} ({e})'
+        res['verdict'] = 'network'
+        add_route(res, url, host, str(e))
         return res
     res.update(status=status, final_url=final)
     if 'pdf' in ctype.lower() or body[:5] == b'%PDF-':
@@ -312,7 +388,21 @@ def fetch(url: str, out: Path, timeout: float, min_delay: float, max_delay: floa
     out.write_text(f'URL: {final}\nTitle: {title}\nHTTP: {status}\n\n{text}\n', encoding='utf-8')
     res.update(title=title[:120], chars=len(text), verdict=verdict(status, title, text))
     res['hint'] = HINTS.get(res['verdict'], '')
+    if res['verdict'] == 'blocked':
+        route = diagnose_route(final)
+        if route:
+            res['route'] = route
+            if route['vpn']:  # a 403 or 451 from abroad is often a geo block
+                res['hint'] = route_hint('blocked', urllib.parse.urlsplit(final).hostname, route)
     return res
+
+
+def add_route(res: dict, url: str, host: str, reason: str) -> None:
+    """Attach the route diagnosis and the hint it implies to a network failure."""
+    route = diagnose_route(url)
+    if route:
+        res['route'] = route
+    res['hint'] = f'{route_hint("network", host, route) or HINTS["network"]} ({reason})'
 
 
 def main(argv=None) -> int:
