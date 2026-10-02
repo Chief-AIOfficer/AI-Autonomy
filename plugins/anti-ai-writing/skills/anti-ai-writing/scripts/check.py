@@ -64,6 +64,23 @@ HARD_BANS = [
     ("концовка-кивок", L + r"(?:[Ээ]то наглядно (?:показывает|демонстрирует)|[Вв]ывод очевиден|[Ээ]то и есть главное)" + R),
 ]
 
+# Формулы деловой переписки, которые раздражают адресата (references/business-letter.md).
+# Предупреждения, только для канала email.
+EMAIL_FORMULAS = [
+    (L + r"[Дд]оброго времени суток", "шаблонное приветствие; «Здравствуйте» или «Добрый день»"),
+    (L + r"[Уу]важаемые коллеги", "обращение ко всем сразу; имена или «Здравствуйте»"),
+    (L + r"[Зз]аранее (?:спасибо|благодар)", "давит на адресата; благодарить после помощи"),
+    (L + r"(?:[Дд]овожу|[Дд]оводим) до (?:вашего|Вашего) сведения|[Оо]бращаем (?:ваше|Ваше) внимание|[Нн]астоящим (?:сообщаю|уведомляю)", "канцелярское вступление; сразу суть"),
+    (L + r"[Уу]бедительн(?:ая|о) просьб", "приказ под видом просьбы; «пожалуйста» и срок"),
+    (r"(?:^|[^А-Яа-яЁёA-Za-z])(?:ASAP|АСАП)" + R + "|" + L + r"(?:[Сс]рочно!|нужно вчера|[Гг]орит!)", "срочность без срока; дата или время и причина"),
+    (L + r"(?:одним глазком|дело на пять минут)", "преуменьшение объёма работы"),
+    (L + r"[Яя] (?:вас|тебя) услышал", "звучит как «ваше мнение мне безразлично»"),
+    (L + r"[Пп]риносим (?:свои )?извинения за (?:доставленные|возможные) неудобства", "отписка; одно извинение своими словами и решение"),
+    (L + r"(?:[Нн]адеюсь|[Нн]адеемся) на (?:ваш |Ваш )?положительный ответ|[Сс] надеждой на (?:скорейший ответ|дальнейшее сотрудничество)", "давление в концовке; следующий шаг или ничего"),
+    (L + r"[Сс] заботой о (?:вас|Вас|вашем|Вашем)", "пустая формула заботы"),
+    (L + r"[Вв]ы ведь профессионал|[Уу]верен,? (?:для вас|что для вас) это не (?:проблема|составит труда)", "давление через похвалу"),
+]
+
 COPULA = re.compile(L + r"(?:[Яя]вляется|[Яя]вляются|[Пп]редставля(?:ет|ют) собой|[Вв]ыступа(?:ет|ют) в качестве)" + R)
 SPACED_HYPHEN = re.compile(r"(?<=\S) - (?=\S)")
 SPACED_EN = re.compile(r"(?<=\S) " + EN_DASH + r" (?=\S)")
@@ -133,10 +150,20 @@ def paragraphs_of(lines):
     return out
 
 
-def check(text, channel):
+# Правила, которые не применяются в жанрах, где канцелярит это норма (SKILL.md §1)
+GENRE_EXEMPT = {
+    "legal": {"«данный»", "«является»", "пересказ в конце"},
+    "academic": {"«данный»", "«является»", "пересказ в конце"},
+}
+
+
+def check(text, channel, genre=None):
     findings = []
+    exempt = GENRE_EXEMPT.get(genre, set())
 
     def add(level, line_no, rule, message, frag=""):
+        if rule in exempt:
+            return
         findings.append({"level": level, "line": line_no, "rule": rule, "message": message, "fragment": frag})
 
     lines = clean_lines(text)
@@ -198,6 +225,18 @@ def check(text, channel):
                     continue
                 add("error", n, rule, "жёсткий запрет §3", snippet(line, m.start(), m.end()))
 
+    # Раздражающие формулы деловой переписки
+    if channel == "email":
+        for n, line in enumerate(lines, 1):
+            if not line.strip():
+                continue
+            quoted = [m.span() for m in QUOTED.finditer(line)]
+            for pattern, why in EMAIL_FORMULAS:
+                for m in re.finditer(pattern, line):
+                    if any(a <= m.start() < b for a, b in quoted):
+                        continue
+                    add("warning", n, "формула переписки", why, snippet(line, m.start(), m.end()))
+
     # «Является» и родня: не чаще раза на 500 слов
     words = len(WORD.findall(" ".join(lines)))
     copulas = [n for n, line in enumerate(lines, 1) for _ in COPULA.finditer(line)]
@@ -250,6 +289,7 @@ def main(argv=None):
     p.add_argument("path", help="файл или - для stdin")
     p.add_argument("--channel", required=True, choices=CHANNELS,
                    help="авторские: post, chat, email, comment; отредактированные: docx, article, deck, report, landing, pdf")
+    p.add_argument("--genre", choices=sorted(GENRE_EXEMPT), help="legal или academic: не считать «данный», «является», «таким образом», это норма жанра")
     p.add_argument("--json", action="store_true", help="вывод в JSON")
     a = p.parse_args(argv)
     try:
@@ -261,7 +301,7 @@ def main(argv=None):
     except OSError as e:
         print(f"не удалось прочитать {a.path}: {e.strerror}", file=sys.stderr)
         return 2
-    findings = check(text, a.channel)
+    findings = check(text, a.channel, a.genre)
     errors = sum(f["level"] == "error" for f in findings)
     if a.json:
         print(json.dumps({"channel": a.channel, "errors": errors, "warnings": len(findings) - errors,

@@ -52,6 +52,13 @@ DELIVER = {
 NUM = re.compile(r"\d+(?:[.,]\d+)?")
 
 
+def numbers(text):
+    """Числа текста с нормализацией: «120 тысяч» и «120 000» дают 120000."""
+    text = re.sub(r"(\d+)\s*тыс(?:яч[аи]?|\.)?", lambda m: m.group(1) + "000", text)
+    text = re.sub(r"(?<=\d)[ \u00a0](?=\d{3}(?!\d))", "", text)
+    return set(NUM.findall(text))
+
+
 def load_cases():
     with open(HERE / "cases.jsonl", encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
@@ -101,10 +108,10 @@ def score_case(case, run_dir):
         if re.search(pat, text):
             fail.append(f"осталось или появилось: {pat}")
     if case["mode"] != "audit":
-        errors = [f for f in check.check(text, case["channel"]) if f["level"] == "error"]
+        errors = [f for f in check.check(text, case["channel"], case.get("genre")) if f["level"] == "error"]
         if errors:
             fail.append("check.py: " + "; ".join(f"{f['rule']} ({f['fragment']})" for f in errors[:5]))
-        new_nums = sorted(set(NUM.findall(text)) - set(NUM.findall(case["text"])))
+        new_nums = sorted(numbers(text) - numbers(case["text"]))
         if new_nums:
             fail.append(f"новые числа: {', '.join(new_nums)}")
         if case.get("decision_must"):

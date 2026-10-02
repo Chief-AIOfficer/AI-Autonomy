@@ -109,6 +109,37 @@ class HardBans(unittest.TestCase):
         self.assertEqual(errors(text), [])
 
 
+class EmailFormulas(unittest.TestCase):
+    def test_formulas_in_email(self):
+        text = ("Доброго времени суток, уважаемые коллеги!\n\nУбедительная просьба прислать отчёт ASAP. "
+                "Заранее спасибо!\n\nС надеждой на скорейший ответ")
+        found = [f for f in check.check(text, "email") if f["rule"] == "формула переписки"]
+        self.assertGreaterEqual(len(found), 5)
+        self.assertTrue(all(f["level"] == "warning" for f in found))
+
+    def test_only_in_email_channel(self):
+        self.assertNotIn("формула переписки", rules("Доброго времени суток!", "post"))
+
+    def test_clean_letter(self):
+        text = "Ирина, добрый день!\n\nПришлите, пожалуйста, акт сверки до пятницы, 11 октября: без него не закроем квартал."
+        self.assertEqual(rules(text, "email"), [])
+
+    def test_quoted_formula_is_mention(self):
+        self.assertNotIn("формула переписки", rules("Не пишите «Доброго времени суток».", "email"))
+
+
+class Genre(unittest.TestCase):
+    def test_legal_allows_bureaucratese(self):
+        text = "Данное постановление является незаконным. Таким образом, прошу его отменить."
+        self.assertIn("«данный»", errors(text, "docx"))
+        legal = [f["rule"] for f in check.check(text, "docx", "legal") if f["level"] == "error"]
+        self.assertEqual(legal, [])
+
+    def test_legal_still_catches_chat_wrapper(self):
+        legal = [f["rule"] for f in check.check("Вот вариант жалобы:\n\nТекст.", "docx", "legal")]
+        self.assertIn("обвязка чата", legal)
+
+
 class Structure(unittest.TestCase):
     def test_bold_labels(self):
         text = "- **Скорость:** выросла.\n- **Качество:** лучше."
