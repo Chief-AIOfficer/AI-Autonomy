@@ -1,0 +1,129 @@
+{
+ "1": [
+  "columns",
+  "lines"
+ ],
+ "2": [
+  "waterfall"
+ ],
+ "3": [
+  "bar_ranked"
+ ],
+ "4": [
+  "pair_delta"
+ ],
+ "5": [
+  "gap_to_target"
+ ],
+ "6": [
+  "group_delta"
+ ],
+ "7": [
+  "dumbbell"
+ ],
+ "8": [
+  "stacked_100"
+ ],
+ "9": [
+  "share_bar"
+ ],
+ "10": [
+  "stacked_columns"
+ ],
+ "11": [
+  "lines"
+ ],
+ "12": [
+  "lines"
+ ],
+ "13": [
+  "table"
+ ],
+ "14": [
+  "matrix_2x2"
+ ],
+ "15": [
+  "risk_map"
+ ],
+ "16": [
+  "points"
+ ],
+ "17": [
+  "pillars"
+ ],
+ "18": [
+  "exec_summary"
+ ],
+ "19": [
+  "quotes"
+ ],
+ "20": [
+  "kpi_cards"
+ ],
+ "21": [
+  "stages"
+ ],
+ "22": [
+  "gantt"
+ ],
+ "23": [
+  "driver_tree"
+ ],
+ "24": [
+  "spectrum"
+ ],
+ "25": [
+  "share_cards"
+ ],
+ "26": [
+  "columns"
+ ],
+ "27": [
+  "columns",
+  "dumbbell"
+ ],
+ "28": [
+  "framework"
+ ],
+ "29": [
+  "table"
+ ],
+ "30": [
+  "segment_map"
+ ],
+ "31": [
+  "lanes"
+ ],
+ "32": [
+  "heat_grid"
+ ],
+ "33": [
+  "layers"
+ ],
+ "34": [
+  "columns",
+  "lines"
+ ],
+ "35": [
+  "columns"
+ ],
+ "36": [
+  "table"
+ ],
+ "37": [
+  "stages"
+ ],
+ "38": [
+  "table"
+ ],
+ "39": [
+  "layers",
+  "framework"
+ ],
+ "40": [
+  "pillars"
+ ],
+ "41": [
+  "gantt"
+ ]
+}
