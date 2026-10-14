@@ -10,6 +10,7 @@
 /plugin marketplace add Chief-AIOfficer/AI-Autonomy
 /plugin install deep-research@ai-autonomy
 /plugin install anti-ai-writing@ai-autonomy
+/plugin install brainstorm-critic@ai-autonomy
 ```
 
 Или из терминала:
@@ -18,6 +19,7 @@
 claude plugin marketplace add Chief-AIOfficer/AI-Autonomy
 claude plugin install deep-research@ai-autonomy
 claude plugin install anti-ai-writing@ai-autonomy
+claude plugin install brainstorm-critic@ai-autonomy
 ```
 
 Обновить: в терминале `claude plugin marketplace update ai-autonomy`, затем `claude plugin update <скилл>@ai-autonomy` и перезапустить Claude Code. Первая команда только обновляет каталог, вторая ставит новую версию скилла.
@@ -28,6 +30,7 @@ claude plugin install anti-ai-writing@ai-autonomy
 |---|---|
 | [deep-research](plugins/deep-research/skills/deep-research/README.md) | Исследование по вопросу: бриф, параллельный сбор источников, независимая проверка каждого несущего утверждения, отчёт в Markdown и HTML с честным «не найдено этим поиском» там, где данных нет |
 | [anti-ai-writing](plugins/anti-ai-writing/skills/anti-ai-writing/README.md) | Русский текст без нейросетевой манеры: убирает канцелярит, пустые контрасты и обвязку чата, ставит тире и кавычки по каналу набора, не выдумывает факты при правке и не подменяет голос автора |
+| [brainstorm-critic](plugins/brainstorm-critic/skills/brainstorm-critic/README.md) | Мозговой штурм с критиком: сначала ищет в ваших файлах, что уже решено и отвергнуто, разводит варианты четырьмя углами отдельными заходами, отбирает по критериям, записанным до отбора, и отдаёт отдельному агенту-критику. Заканчивается одной рекомендацией и ближайшим шагом. Ваши источники и углы можно вынести в личный профиль |
 
 ## Требования
 
