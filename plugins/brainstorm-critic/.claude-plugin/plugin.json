@@ -1,0 +1,10 @@
+{
+  "name": "brainstorm-critic",
+  "version": "2.0.0",
+  "description": "Мозговой штурм с критиком: своё сырьё до идей, четыре угла отдельными заходами, критерии до отбора, разбор отдельным агентом, одна рекомендация и ближайший шаг",
+  "author": {
+    "name": "Alexander Ulyanov"
+  },
+  "license": "MIT",
+  "keywords": ["brainstorming", "ideation", "critique", "pre-mortem", "decision", "career", "russian"]
+}
