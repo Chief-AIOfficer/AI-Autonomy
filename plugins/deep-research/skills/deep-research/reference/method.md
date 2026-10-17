@@ -15,10 +15,12 @@ Different machines have different tools. Before planning, check what exists: the
 | Raw text from this machine's own network (sites that refuse cloud IPs, Russian state and bank sites) | `python3 scripts/fetch_raw.py URL` | – |
 | Page that needs a real browser or the user's login | – | Claude in Chrome (the user's own browser, see "The user's browser") |
 | Crawl a whole site or documentation | – | Apify `website-content-crawler`, Firecrawl `crawl`, Tavily `tavily_crawl` |
-| Reddit | none (built-ins are blocked by Reddit) | Bright Data `web_data_reddit_posts`, Apify `reddit-scraper-lite` |
-| LinkedIn, company databases | – | Bright Data `web_data_linkedin_*`, `web_data_crunchbase_company` |
+| Reddit | none (built-ins are blocked by Reddit) | Bright Data scrapers "Reddit- Posts" and "Reddit - Comments" (`search_scrapers` → `get_scraper_details` → `run_scraper`), Apify `reddit-scraper-lite` |
+| LinkedIn, company databases | – | Bright Data scrapers ("LinkedIn people profiles", "LinkedIn company information", "LinkedIn posts", Crunchbase) via `search_scrapers` → `run_scraper` |
 | Telegram channels | – | Apify `telegram-scraper` (recent posts only; for a full history ask the user to export the channel) |
 | Academic papers | `WebSearch` with `allowed_domains: ["arxiv.org"]` | arXiv, Semantic Scholar servers |
+
+Bright Data retired its per-site `web_data_*` tools in October 2026. Pre-built scrapers now go through one path: `search_scrapers` finds the scraper for a site, `get_scraper_details` shows the input fields, `run_scraper` runs it (poll `get_scraper_progress` and `get_scraper_results` if it takes longer than 45 seconds). Every returned record is billed, so set `limit_per_input` on `discover_by_*` methods.
 
 **Order of preference within a class: free and built-in first, then prepaid services, then metered ones.** If the user's own instructions rank the services (for cost or other reasons), their ranking wins. Metered search APIs are used with their cheapest depth setting unless a cheaper call already failed. Do not call an autonomous "research" endpoint of a service (for example `tavily_research`) unless the user asks: it is a paid research run inside the research run.
 
