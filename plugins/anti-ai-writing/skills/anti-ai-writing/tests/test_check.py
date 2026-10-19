@@ -26,6 +26,11 @@ class Dashes(unittest.TestCase):
         for ch in ("post", "docx", "deck"):
             self.assertIn("длинное тире", errors(f"Он {EM} инженер.", ch))
 
+    def test_space_before_percent_is_error(self):
+        for sep in (" ", "\u00a0", "\u202f"):
+            self.assertIn("пробел перед %", errors(f"Выросло на 1,5{sep}%.", "docx"))
+        self.assertNotIn("пробел перед %", errors("Выросло на 1,5% и на 15%.", "docx"))
+
     def test_en_dash_in_post_is_error(self):
         self.assertIn("тире не своего канала", errors(f"Он {EN} инженер.", "post"))
 

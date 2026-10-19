@@ -177,6 +177,8 @@ def check(text, channel, genre=None):
             continue
         for m in re.finditer("[" + EM_DASHES + "]", line):
             add("error", n, "длинное тире", "длинного тире нет нигде; знак канала по §4 или перестройка", snippet(line, m.start(), m.end()))
+        for m in re.finditer(r"\d[ \u00a0\u202f]%", line):
+            add("error", n, "пробел перед %", "знак процента пишется сразу после числа: 15%, 1,5%", snippet(line, m.start(), m.end()))
         prose = LIST_ITEM.sub("", line, count=1)
         if authored:
             for m in SPACED_EN.finditer(prose):
